@@ -11,14 +11,19 @@ volatile int button_left_presses = 0;
 
 volatile int encoder = 0;
 
-volatile int64_t debounceStart_us_CENTER =  esp_timer_get_time();
-volatile int64_t debounceStart_us_DOWN =  esp_timer_get_time();
-volatile int64_t debounceStart_us_RIGHT =  esp_timer_get_time();
-volatile int64_t debounceStart_us_UP =  esp_timer_get_time();
-volatile int64_t debounceStart_us_LEFT =  esp_timer_get_time();
+volatile int64_t debounceStart_us_CENTER = esp_timer_get_time();
+volatile int64_t debounceStart_us_DOWN = esp_timer_get_time();
+volatile int64_t debounceStart_us_RIGHT = esp_timer_get_time();
+volatile int64_t debounceStart_us_UP = esp_timer_get_time();
+volatile int64_t debounceStart_us_LEFT = esp_timer_get_time();
 const int buttonDebounceTime_us = 200'000;
 
 
+#ifdef CALIBRATE_ACCELEROMETER
+volatile int64_t lastPressTimeCenterButton_us = esp_timer_get_time();
+const int buttonDelayTillCalibrationAccelerometerMeasurement_us = 1'500'000;//1.5sec
+const int buttonCalibrationAccelerometerMeasurementTime_us = 200'000;//0.2sec
+#endif
 
 
 void interruptButton_CENTER(){
@@ -26,9 +31,23 @@ void interruptButton_CENTER(){
     if(debounceStart_us_CENTER + buttonDebounceTime_us > now) {return;}
     debounceStart_us_CENTER = now;
     button_center_presses++;
-    //Serial.println("Center");
     setPiezo(250,50);
+
+    #ifdef CALIBRATE_ACCELEROMETER
+    lastPressTimeCenterButton_us = esp_timer_get_time();
+    #endif
 }
+
+#ifdef CALIBRATE_ACCELEROMETER
+bool takeCalibrationAccelerometerMeasurement(){
+    int64_t now = esp_timer_get_time();
+    if(lastPressTimeCenterButton_us + buttonDelayTillCalibrationAccelerometerMeasurement_us > now) {return false;}
+    if(lastPressTimeCenterButton_us + buttonDelayTillCalibrationAccelerometerMeasurement_us + buttonCalibrationAccelerometerMeasurementTime_us < now) {return false;}
+    return true;
+}
+#endif
+
+
 void interruptButton_DOWN(){
     int64_t now = esp_timer_get_time();
     if(debounceStart_us_DOWN + buttonDebounceTime_us > now) {return;}

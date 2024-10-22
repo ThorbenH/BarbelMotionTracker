@@ -211,10 +211,15 @@ int createNewDataLogFilePath(){//returns file number
     int num = getNumberOfFiles();
     String path = "/device";
     path += setting_device_number;
+    #if defined(CALIBRATE_ACCELEROMETER) && !defined(CALIBRATE_MAGNETOMETER)
+    path += "_cal_accelerometer.txt";
+    #elif defined(CALIBRATE_MAGNETOMETER) && !defined(CALIBRATE_ACCELEROMETER)
+    path += "_cal_magnetometer.txt";
+    #else
     path += "_log";
     path += num-1;
     path += ".csv";
-
+    #endif
     dataLogFilePath = path;
     return num;
 }
@@ -226,8 +231,10 @@ bool createNewDataLogFile(){
 
     File myFile = SD.open(dataLogFilePath, FILE_WRITE);
     if (myFile) {
+        #if !defined(CALIBRATE_ACCELEROMETER) && !defined(CALIBRATE_MAGNETOMETER)
         myFile.print("New Logging for device ");
         myFile.println(setting_device_number);
+        #endif
         myFile.close();
         return true;
     }

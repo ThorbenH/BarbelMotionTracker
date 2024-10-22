@@ -317,6 +317,18 @@ void taskSDCard(TimerHandle_t xTimer){
         String text = "";
         int freeSpace = uxQueueSpacesAvailable(sensorReadingsQueue);
         while(xQueueReceive(sensorReadingsQueue, (void *)&writeMesurement, 0) == pdTRUE) {
+            
+            #if defined(CALIBRATE_ACCELEROMETER) && !defined(CALIBRATE_MAGNETOMETER)
+            if(takeCalibrationAccelerometerMeasurement()){
+                text += doubleToString(writeMesurement.acc_x); text += "\t";
+                text += doubleToString(writeMesurement.acc_y); text += "\t";
+                text += doubleToString(writeMesurement.acc_z); text += "\t\n";
+            }
+            #elif defined(CALIBRATE_MAGNETOMETER) && !defined(CALIBRATE_ACCELEROMETER)
+            text += doubleToString(writeMesurement.mag_x); text += "\t";
+            text += doubleToString(writeMesurement.mag_y); text += "\t";
+            text += doubleToString(writeMesurement.mag_z); text += "\t\n";
+            #else
             text += barPresent; text += ",";
             text += handPresent; text += ",";
             text += floatToString2Decimals(batteryVoltage); text += ",";
@@ -350,6 +362,7 @@ void taskSDCard(TimerHandle_t xTimer){
             text += doubleToString(writeMesurement.abs_height); text += ",";
             
             text += writeMesurement.time_since_last_measure_us; text += "\n";
+            #endif
         }
         stringDoneTime= esp_timer_get_time();
         if(!text.isEmpty()){
